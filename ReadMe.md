@@ -1,6 +1,6 @@
-# Multimodal Emotion Detection
+# ML-Based Human Emotion Detection System with Visual and Audio Modes
 
-This project combines **Speech Emotion Recognition (SER)** and **Facial Emotion Recognition (FER)** to build a robust **Multimodal Emotion Detection** system. The aim is to detect human emotions using both **audio** and **visual** cues for higher accuracy and real-world applicability.
+This project combines **Speech Emotion Recognition (SER)** and **Facial Emotion Recognition (FER)** to build a robust **Human Emotion Detection** system. The aim is to detect human emotions using both **audio** and **visual** cues for higher accuracy and real-world applicability.
 
 ## 📚 Datasets Used
 
