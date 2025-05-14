@@ -27,3 +27,7 @@ This project combines **Speech Emotion Recognition (SER)** and **Facial Emotion 
 ### Naive Bayes
 ![naive_bayes](./SER_confusion_matrix_NaiveBayes.png)
 ![naive_bayes_report](./Report_NaiveBayes.png)
+
+## FER
+![fer](./FER_confusion_matrix.png)
+![fer_report](./Report_FER.png)
