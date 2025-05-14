@@ -1,0 +1,5 @@
+ravdess_data/**
+*.png
+.idea
+*.joblib
+SERmain_output.txt
