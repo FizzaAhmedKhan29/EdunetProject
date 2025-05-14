@@ -25,16 +25,6 @@ This project combines **Speech Emotion Recognition (SER)** and **Facial Emotion 
 - **Total Samples**: 1,440 audio files for speech (used for SER)
 - **Labeling**: Emotions are encoded in the filename using a fixed schema (e.g., `03-01-05-01-02-01-12.wav`)
 
-- **Preprocessing Steps**:
-  - Extraction of audio features like:
-    - MFCC (Mel-Frequency Cepstral Coefficients)
-    - Chroma Frequencies
-    - Spectral Contrast
-    - Zero Crossing Rate
-    - Root Mean Square Energy
-  - Normalization and label encoding
-  - Train-test split (typically 80-20)
-
 ---
 
 ### 📷 Facial Emotion Recognition (FER) – FER2013
@@ -62,12 +52,6 @@ This project combines **Speech Emotion Recognition (SER)** and **Facial Emotion 
     - Training: ~28,000 images
     - Public Test: ~3,500 images
     - Private Test: ~3,500 images
-
-- **Preprocessing Steps**:
-  - Convert pixel string to NumPy arrays
-  - Normalize pixel values (0–1 range)
-  - One-hot encode emotion labels
-  - Data augmentation (optional) for better generalization
 
 ---
 

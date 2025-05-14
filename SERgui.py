@@ -74,8 +74,8 @@ def predict_ser_emotion():
     selected_model = ser_models[selected_ser_model.get()]
     selected_prediction = selected_model.predict(features)[0]
     comparison_results = {name: model.predict(features)[0] for name, model in ser_models.items()}
-    result_text = f"Selected Model ({selected_ser_model.get()}): {selected_prediction}\n\n"
-    result_text += "Other Models:\n"
+    result_text = f"Selected Model ({selected_ser_model.get()}): {selected_prediction}\n\n\n\n\n\n"
+    result_text += "Here's What Other Models Predict:\n\n"
     for name, pred in comparison_results.items():
         if name != selected_ser_model.get():
             result_text += f"  {name}: {pred}\n"
@@ -89,7 +89,7 @@ tk.Entry(ser_tab, textvariable=ser_file_path, width=50).pack()
 tk.Button(ser_tab, text="Browse", command=browse_ser_file).pack(pady=5)
 tk.Button(ser_tab, text="Predict Emotion", command=predict_ser_emotion, bg="lightgreen").pack(pady=10)
 
-ser_output_label = tk.Label(ser_tab, text="", justify="left", font=("Arial", 12), fg="blue")
+ser_output_label = tk.Label(ser_tab, text="",bg="lightblue", justify="left", font=("Arial", 12), fg="blue")
 ser_output_label.pack(padx=10, pady=10)
 
 # ---------- FER Tab ----------

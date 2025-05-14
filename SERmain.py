@@ -15,7 +15,7 @@ from sklearn.neighbors import KNeighborsClassifier
 
 from SERfeatures import load_data, observed_emotions
 
-# Redirect console output to file
+# Redirecting console output to file
 sys.stdout = open("SERmain_output.txt", "w")
 
 np.random.seed(42)
@@ -77,6 +77,6 @@ for name, model in models.items():
     joblib.dump(model, f"SER_{name}.joblib")
     print(f"Saved the {name} model!")
 
-# Restore standard output (optional)
+# Restore standard output
 sys.stdout.close()
 sys.stdout = sys.__stdout__
