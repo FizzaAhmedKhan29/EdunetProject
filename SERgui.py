@@ -93,9 +93,6 @@ ser_output_label = tk.Label(ser_tab, text="", justify="left", font=("Arial", 12)
 ser_output_label.pack(padx=10, pady=10)
 
 # ---------- FER Tab ----------
-fer_tab = ttk.Frame(notebook)
-notebook.add(fer_tab, text='Facial Emotion Recognition')
-
 fer_file_path = tk.StringVar()
 
 def browse_fer_file():
@@ -112,39 +109,69 @@ def predict_fer_emotion():
     predicted_emotion = fer_emotions[predicted_index]
     fer_output_label.config(text=f"Predicted Emotion: {predicted_emotion}")
 
+# ---------- FER Tab ----------
+fer_tab = ttk.Frame(notebook)
+notebook.add(fer_tab, text='Facial Emotion Recognition')
+
+fer_file_path = tk.StringVar()
+
+# Emotion-to-image mapping (update paths as needed)
+emotion_image_map = {
+    "happy": "images/happy.png",
+    "sad": "images/sad.png",
+    "angry": "images/angry.png",
+    "fearful": "images/fearful.png",
+    "disgust": "images/disgusted.png",
+    "neutral": "images/neutral.png",
+    "surprised": "images/surprised.png"
+}
+
+# Image reference storage (to prevent garbage collection)
+fer_loaded_images = {}
+
+def browse_fer_file():
+    path = filedialog.askopenfilename(filetypes=[("Image Files", "*.jpg *.png")])
+    fer_file_path.set(path)
+
+def predict_fer_emotion():
+    if not fer_file_path.get():
+        messagebox.showerror("Error", "Please select an image file.")
+        return
+    try:
+        img_array = prepare_fer_image(fer_file_path.get())
+        predictions = fer_model.predict(img_array)[0]
+        predicted_index = np.argmax(predictions)
+        predicted_emotion = fer_emotions[predicted_index].lower()
+
+        # Show predicted emotion text
+        fer_output_label.config(text=f"Predicted Emotion: {predicted_emotion.capitalize()}")
+
+        # Display corresponding cartoon image
+        image_path = emotion_image_map.get(predicted_emotion)
+        if image_path and os.path.exists(image_path):
+            pil_img = Image.open(image_path).resize((100, 100))
+            tk_img = ImageTk.PhotoImage(pil_img)
+            fer_loaded_images["current"] = tk_img  # Prevent garbage collection
+            fer_image_display.config(image=tk_img)
+        else:
+            fer_image_display.config(image='', text='[Image not available]')
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Prediction failed:\n{str(e)}")
+
+# Input Section (top)
 tk.Label(fer_tab, text="Select Image File (.jpg, .png):").pack()
 tk.Entry(fer_tab, textvariable=fer_file_path, width=50).pack()
 tk.Button(fer_tab, text="Browse", command=browse_fer_file).pack(pady=5)
 tk.Button(fer_tab, text="Predict Emotion", command=predict_fer_emotion, bg="lightblue").pack(pady=10)
 
+# Output Text (middle)
 fer_output_label = tk.Label(fer_tab, text="", font=("Arial", 12), fg="green")
 fer_output_label.pack(pady=10)
-sample_frame = tk.LabelFrame(fer_tab, text="", padx=10, pady=10)
-sample_frame.pack(pady=10)
 
-image_paths = [
-    ('images/happy.png', 'happy'), ('images/sad.png', 'sad'), ('images/neutral.png', 'neutral'),
-    ('images/fearful.png', 'fearful'), ('images/disgusted.png', 'disgusted'), ('images/angry.png', 'angry')
-]  # Update as per your files
-sample_images = []
+# Image Display (bottom of the tab)
+fer_image_display = tk.Label(fer_tab)
+fer_image_display.pack(pady=20)
 
-for idx, (img_file, label_text) in enumerate(image_paths):
-    try:
-        img = Image.open(img_file)
-        img = img.resize((80, 80))
-        img_tk = ImageTk.PhotoImage(img)
-        sample_images.append(img_tk)  # Keep reference to prevent garbage collection
-
-        # Frame for image + label
-        container = tk.Frame(sample_frame)
-        container.grid(row=idx // 3, column=idx % 3, padx=10, pady=10)
-
-        img_label = tk.Label(container, image=img_tk)
-        img_label.pack()
-
-        text_label = tk.Label(container, text=label_text.capitalize())
-        text_label.pack()
-    except Exception as e:
-        print(f"Failed to load {img_file}: {e}")
 
 root.mainloop()
