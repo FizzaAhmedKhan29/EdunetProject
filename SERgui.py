@@ -1,103 +1,150 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from PIL import Image, ImageTk
+from tkinter import filedialog, messagebox, ttk
 import numpy as np
 import librosa
 import joblib
 import os
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
 
-# Define path mappings to your models
-MODEL_PATHS = {
-    "KNN": "SER_KNN.joblib",
-    "MLP": "SER_MLP.joblib",
-    "Naive Bayes": "SER_NaiveBayes.joblib",
-    "Decision Tree": "SER_DecisionTree.joblib",
-    "Random Forest": "SER_RandomForest.joblib",
-    "SVM": "SER_SVM.joblib"
+# ========== SER Setup ==========
+ser_model_paths = {
+    'KNN': 'SER_KNN.joblib',
+    'SVM': 'SER_SVM.joblib',
+    'NaiveBayes': 'SER_NaiveBayes.joblib',
+    'RandomForest': 'SER_RandomForest.joblib',
+    'MLP': 'SER_MLP.joblib',
+    'DecisionTree': 'SER_DecisionTree.joblib'
 }
+ser_emotions = ['neutral', 'calm', 'happy', 'sad', 'angry', 'fearful', 'disgust', 'surprised']
+ser_models = {name: joblib.load(path) for name, path in ser_model_paths.items()}
 
-def extract_feature(file_name, mfcc=True, chroma=True, mel=True):
+def extract_ser_features(file_name, mfcc=True, chroma=True, mel=True):
     X, sample_rate = librosa.load(file_name, res_type='kaiser_fast')
     result = np.array([])
-
     if chroma:
         stft = np.abs(librosa.stft(X))
-
     if mfcc:
         mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40).T, axis=0)
         result = np.hstack((result, mfccs))
-
     if chroma:
         chroma_feat = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T, axis=0)
         result = np.hstack((result, chroma_feat))
-
     if mel:
         mel_feat = np.mean(librosa.feature.melspectrogram(y=X, sr=sample_rate).T, axis=0)
         result = np.hstack((result, mel_feat))
-
     return result.reshape(1, -1)
 
-# GUI setup
-class EmotionRecognizerGUI:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Speech Emotion Recognition")
+# ========== FER Setup ==========
+fer_model_path = "FER_CNN_model.h5"
+fer_model = load_model(fer_model_path)
+fer_emotions = ['angry', 'disgust', 'fearful', 'happy', 'neutral', 'sad', 'surprised']
 
-        self.selected_model = tk.StringVar()
-        self.selected_model.set("KNN")  # Default
+def prepare_fer_image(img_path):
+    img = image.load_img(img_path, target_size=(48, 48), color_mode='grayscale')
+    img_array = image.img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array /= 255.0
+    return img_array
 
-        # Dropdown to select model
-        tk.Label(root, text="Select Model:").pack()
-        tk.OptionMenu(root, self.selected_model, *MODEL_PATHS.keys()).pack(pady=5)
+# ========== GUI Setup ==========
+root = tk.Tk()
+root.title("Multimodal Emotion Recognition")
 
-        # Upload button
-        tk.Button(root, text="Upload Audio File", command=self.upload_file).pack(pady=10)
-        self.file_name = tk.Label(root, text="Please select a file", font=("Arial", 8, "bold"), fg="black")
-        self.file_name.pack(pady=2)
+notebook = ttk.Notebook(root)
+notebook.pack(expand=True, fill='both')
 
-        # Output label for selected model
-        self.primary_output = tk.Label(root, text="", font=("Arial", 12, "bold"), fg="blue")
-        self.primary_output.pack(pady=10)
+# ---------- SER Tab ----------
+ser_tab = ttk.Frame(notebook)
+notebook.add(ser_tab, text='Speech Emotion Recognition')
 
-        # Output text widget for showing all model predictions
-        self.all_output = tk.Text(root, height=10, width=60, font=("Arial", 10))
-        self.all_output.pack(pady=5)
+selected_ser_model = tk.StringVar(value='KNN')
+ser_file_path = tk.StringVar()
 
-    def upload_file(self):
-        file_path = filedialog.askopenfilename(filetypes=[("WAV Files", "*.wav")])
-        self.file_name.config(text=file_path)
-        if not file_path:
-            return
+def browse_ser_file():
+    path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.wav")])
+    ser_file_path.set(path)
 
-        try:
-            features = extract_feature(file_path)
-            self.all_output.delete(1.0, tk.END)  # Clear previous results
+def predict_ser_emotion():
+    if not ser_file_path.get():
+        messagebox.showerror("Error", "Please select an audio file.")
+        return
+    features = extract_ser_features(ser_file_path.get())
+    selected_model = ser_models[selected_ser_model.get()]
+    selected_prediction = selected_model.predict(features)[0]
+    comparison_results = {name: model.predict(features)[0] for name, model in ser_models.items()}
+    result_text = f"Selected Model ({selected_ser_model.get()}): {selected_prediction}\n\n"
+    result_text += "Other Models:\n"
+    for name, pred in comparison_results.items():
+        if name != selected_ser_model.get():
+            result_text += f"  {name}: {pred}\n"
+    ser_output_label.config(text=result_text)
 
-            selected = self.selected_model.get()
-            all_predictions = {}
+tk.Label(ser_tab, text="Select Model:").pack()
+tk.OptionMenu(ser_tab, selected_ser_model, *ser_model_paths.keys()).pack()
 
-            for model_name, model_file in MODEL_PATHS.items():
-                if not os.path.exists(model_file):
-                    all_predictions[model_name] = "Model file not found"
-                    continue
+tk.Label(ser_tab, text="Select Audio File (.wav):").pack()
+tk.Entry(ser_tab, textvariable=ser_file_path, width=50).pack()
+tk.Button(ser_tab, text="Browse", command=browse_ser_file).pack(pady=5)
+tk.Button(ser_tab, text="Predict Emotion", command=predict_ser_emotion, bg="lightgreen").pack(pady=10)
 
-                model = joblib.load(model_file)
-                all_predictions[model_name] = model.predict(features)[0]
+ser_output_label = tk.Label(ser_tab, text="", justify="left", font=("Arial", 12), fg="blue")
+ser_output_label.pack(padx=10, pady=10)
 
-            # Show selected model prediction
-            selected_emotion = all_predictions[selected]
-            self.primary_output.config(text=f"{selected} Prediction: {selected_emotion}")
+# ---------- FER Tab ----------
+fer_tab = ttk.Frame(notebook)
+notebook.add(fer_tab, text='Facial Emotion Recognition')
 
-            self.all_output.insert(tk.END, "Here's what other models predicted:\n")
-            # Show all predictions
-            for model, emotion in all_predictions.items():
-                self.all_output.insert(tk.END, f"{model}: {emotion}\n")
+fer_file_path = tk.StringVar()
 
-        except Exception as e:
-            messagebox.showerror("Error", f"Something went wrong:\n{str(e)}")
+def browse_fer_file():
+    path = filedialog.askopenfilename(filetypes=[("Image Files", "*.jpg *.png")])
+    fer_file_path.set(path)
 
+def predict_fer_emotion():
+    if not fer_file_path.get():
+        messagebox.showerror("Error", "Please select an image file.")
+        return
+    img_array = prepare_fer_image(fer_file_path.get())
+    predictions = fer_model.predict(img_array)[0]
+    predicted_index = np.argmax(predictions)
+    predicted_emotion = fer_emotions[predicted_index]
+    fer_output_label.config(text=f"Predicted Emotion: {predicted_emotion}")
 
-# Run the GUI
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = EmotionRecognizerGUI(root)
-    root.mainloop()
+tk.Label(fer_tab, text="Select Image File (.jpg, .png):").pack()
+tk.Entry(fer_tab, textvariable=fer_file_path, width=50).pack()
+tk.Button(fer_tab, text="Browse", command=browse_fer_file).pack(pady=5)
+tk.Button(fer_tab, text="Predict Emotion", command=predict_fer_emotion, bg="lightblue").pack(pady=10)
+
+fer_output_label = tk.Label(fer_tab, text="", font=("Arial", 12), fg="green")
+fer_output_label.pack(pady=10)
+sample_frame = tk.LabelFrame(fer_tab, text="", padx=10, pady=10)
+sample_frame.pack(pady=10)
+
+image_paths = [
+    ('images/happy.png', 'happy'), ('images/sad.png', 'sad'), ('images/neutral.png', 'neutral'),
+    ('images/fearful.png', 'fearful'), ('images/disgusted.png', 'disgusted'), ('images/angry.png', 'angry')
+]  # Update as per your files
+sample_images = []
+
+for idx, (img_file, label_text) in enumerate(image_paths):
+    try:
+        img = Image.open(img_file)
+        img = img.resize((80, 80))
+        img_tk = ImageTk.PhotoImage(img)
+        sample_images.append(img_tk)  # Keep reference to prevent garbage collection
+
+        # Frame for image + label
+        container = tk.Frame(sample_frame)
+        container.grid(row=idx // 3, column=idx % 3, padx=10, pady=10)
+
+        img_label = tk.Label(container, image=img_tk)
+        img_label.pack()
+
+        text_label = tk.Label(container, text=label_text.capitalize())
+        text_label.pack()
+    except Exception as e:
+        print(f"Failed to load {img_file}: {e}")
+
+root.mainloop()

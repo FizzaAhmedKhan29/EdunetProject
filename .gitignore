@@ -3,3 +3,4 @@ ravdess_data/**
 .idea
 *.joblib
 SERmain_output.txt
+*.h5
