@@ -2,7 +2,9 @@
 
 This project combines **Speech Emotion Recognition (SER)** and **Facial Emotion Recognition (FER)** to build a robust **Multimodal Emotion Detection** system. The aim is to detect human emotions using both **audio** and **visual** cues for higher accuracy and real-world applicability.
 
-## Confusion Matrices
+# Confusion Matrices
+
+## SER
 
 ### Random Forest
 ![random_forest](./SER_confusion_matrix_RandomForest.png)
