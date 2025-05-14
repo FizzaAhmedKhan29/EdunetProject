@@ -34,7 +34,7 @@ def extract_feature(file_name, mfcc=True, chroma=True, mel=True):
         mel_feat = np.mean(librosa.feature.melspectrogram(y=X, sr=sample_rate).T, axis=0)
         result = np.hstack((result, mel_feat))
 
-    return result.reshape(1, -1)  # reshape for sklearn predict()
+    return result.reshape(1, -1)
 
 # GUI setup
 class EmotionRecognizerGUI:
@@ -47,32 +47,54 @@ class EmotionRecognizerGUI:
 
         # Dropdown to select model
         tk.Label(root, text="Select Model:").pack()
-        tk.OptionMenu(root, self.selected_model, *MODEL_PATHS.keys()).pack()
+        tk.OptionMenu(root, self.selected_model, *MODEL_PATHS.keys()).pack(pady=5)
 
         # Upload button
         tk.Button(root, text="Upload Audio File", command=self.upload_file).pack(pady=10)
+        self.file_name = tk.Label(root, text="Please select a file", font=("Arial", 8, "bold"), fg="black")
+        self.file_name.pack(pady=2)
 
-        # Output
-        self.output_label = tk.Label(root, text="", fg="blue", font=("Arial", 12))
-        self.output_label.pack(pady=10)
+        # Output label for selected model
+        self.primary_output = tk.Label(root, text="", font=("Arial", 12, "bold"), fg="blue")
+        self.primary_output.pack(pady=10)
+
+        # Output text widget for showing all model predictions
+        self.all_output = tk.Text(root, height=10, width=60, font=("Arial", 10))
+        self.all_output.pack(pady=5)
 
     def upload_file(self):
-        file_path = filedialog.askopenfilename(filetypes=[("WAV files", "*.wav")])
+        file_path = filedialog.askopenfilename(filetypes=[("WAV Files", "*.wav")])
+        self.file_name.config(text=file_path)
         if not file_path:
             return
 
         try:
             features = extract_feature(file_path)
-            model_file = MODEL_PATHS[self.selected_model.get()]
-            if not os.path.exists(model_file):
-                messagebox.showerror("Error", f"Model file {model_file} not found.")
-                return
+            self.all_output.delete(1.0, tk.END)  # Clear previous results
 
-            model = joblib.load(model_file)
-            prediction = model.predict(features)[0]
-            self.output_label.config(text=f"Predicted Emotion: {prediction}")
+            selected = self.selected_model.get()
+            all_predictions = {}
+
+            for model_name, model_file in MODEL_PATHS.items():
+                if not os.path.exists(model_file):
+                    all_predictions[model_name] = "Model file not found"
+                    continue
+
+                model = joblib.load(model_file)
+                all_predictions[model_name] = model.predict(features)[0]
+
+            # Show selected model prediction
+            selected_emotion = all_predictions[selected]
+            self.primary_output.config(text=f"{selected} Prediction: {selected_emotion}")
+
+            self.all_output.insert(tk.END, "Here's what other models predicted:\n")
+            # Show all predictions
+            for model, emotion in all_predictions.items():
+                self.all_output.insert(tk.END, f"{model}: {emotion}\n")
+
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to predict emotion:\n{e}")
+            messagebox.showerror("Error", f"Something went wrong:\n{str(e)}")
+
 
 # Run the GUI
 if __name__ == "__main__":
