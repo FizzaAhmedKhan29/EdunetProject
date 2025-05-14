@@ -173,5 +173,4 @@ fer_output_label.pack(pady=10)
 fer_image_display = tk.Label(fer_tab)
 fer_image_display.pack(pady=20)
 
-
 root.mainloop()
